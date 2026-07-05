@@ -1,0 +1,40 @@
+{
+  "name": "pi-stats",
+  "version": "0.1.0",
+  "description": "Pi extension for tracking token usage by day, provider, and model.",
+  "type": "module",
+  "private": false,
+  "keywords": [
+    "pi-package",
+    "pi",
+    "usage",
+    "tokens",
+    "sqlite"
+  ],
+  "license": "MIT",
+  "main": "extensions/pi-stats/index.ts",
+  "scripts": {
+    "test": "vitest run --dir tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^22.13.10",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./extensions/pi-stats/index.ts"
+    ]
+  }
+}

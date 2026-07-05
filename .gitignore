@@ -1,0 +1,11 @@
+.superpowers/
+node_modules/
+dist/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+pi-stats-*.html
+
+.worktrees/
+.pi-subagents/
+docs/superpowers/
