@@ -19,6 +19,18 @@ pi install git:github.com/ihsanbudiman/pi-stats
 /pi-stats db              Show the SQLite database path
 ```
 
+## Uninstall
+
+```bash
+pi uninstall git:github.com/ihsanbudiman/pi-stats
+```
+
+Uninstalling keeps your usage data. To delete it too:
+
+```bash
+rm -rf ~/.pi/agent/pi-stats
+```
+
 ## Storage
 
 Default database path:
