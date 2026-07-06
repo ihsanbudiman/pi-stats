@@ -105,7 +105,7 @@ describe("dashboard client behavior", () => {
     expect(doc.querySelector("#range-btn-label")?.textContent).toBe("Last 7 days");
     // only the recent cell (180 tokens) is inside the last 7 days
     expect(doc.querySelector(".tile .value")?.textContent).toBe("180");
-    expect(doc.querySelectorAll("#providers tbody tr")).toHaveLength(1);
+    expect(doc.querySelectorAll("#providers tbody tr")).toHaveLength(2);
   });
 
   it("keeps filter selections and updates totals in place when clicked", () => {
@@ -116,7 +116,7 @@ describe("dashboard client behavior", () => {
     // selection sticks and both cells (180 + 1000) are now in range
     expect(doc.querySelector("#range-btn-label")?.textContent).toBe("Last 30 days");
     expect(doc.querySelector(".tile .value")?.textContent).toBe("1.2K");
-    expect(doc.querySelectorAll("#providers tbody tr")).toHaveLength(2);
+    expect(doc.querySelectorAll("#providers tbody tr")).toHaveLength(4);
 
     const provider = doc.querySelector('select[name="provider"]') as HTMLSelectElement;
     provider.value = "other-provider";
@@ -124,7 +124,7 @@ describe("dashboard client behavior", () => {
     // provider filter scopes everything below; range selection is untouched
     expect(doc.querySelector("#range-btn-label")?.textContent).toBe("Last 30 days");
     expect(doc.querySelector(".tile .value")?.textContent).toBe("1K");
-    expect(doc.querySelectorAll("#models tbody tr")).toHaveLength(1);
+    expect(doc.querySelectorAll("#models tbody tr")).toHaveLength(2);
     expect(doc.querySelector("#models .name")?.textContent).toBe("other-model");
   });
 

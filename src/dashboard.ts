@@ -529,12 +529,6 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       nameCell.append(el('div', 'name', row.name));
       const rowInputTotal = row.t.inputTokens + row.t.cacheReadTokens + row.t.cacheWriteTokens;
       const rowCachePct = rowInputTotal > 0 ? Math.round((row.t.cacheReadTokens + row.t.cacheWriteTokens) / rowInputTotal * 100) : 0;
-      nameCell.append(el('div', 'sub', plain.format(row.t.eventCount) + (row.t.eventCount === 1 ? ' response' : ' responses') + (row.t.cacheReadTokens + row.t.cacheWriteTokens > 0 ? ' · ' + rowCachePct + '% cached' : '')));
-      const meter = el('div', 'meter');
-      const fill = el('span', 'meter-fill');
-      fill.style.width = Math.max(2, Math.round((row.t.totalTokens / maxTokens) * 100)) + '%';
-      meter.append(fill);
-      nameCell.append(meter);
       tr.append(
         nameCell,
         el('td', 'num', fmtTokens(row.t.totalTokens)),
@@ -542,7 +536,19 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
         el('td', 'num', fmtTokens(row.t.outputTokens)),
         el('td', 'num', fmtCost(costOf(row.t))),
       );
+      tr.querySelectorAll('td').forEach((c) => c.style.borderBottom = 'none');
       tbody.append(tr);
+
+      const subTr = el('tr');
+      const meterCell = el('td');
+      const meter = el('div', 'meter');
+      const fill = el('span', 'meter-fill');
+      fill.style.width = Math.max(2, Math.round((row.t.totalTokens / maxTokens) * 100)) + '%';
+      meter.append(fill);
+      meterCell.append(meter);
+      const subCell = el('td', 'num sub', plain.format(row.t.eventCount) + (row.t.eventCount === 1 ? ' response' : ' responses') + (row.t.cacheReadTokens + row.t.cacheWriteTokens > 0 ? ' · ' + rowCachePct + '% cached' : ''));
+      subTr.append(meterCell, subCell, el('td'), el('td'), el('td'));
+      tbody.append(subTr);
     }
     table.append(thead, tbody);
     container.append(table);
