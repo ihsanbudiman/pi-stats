@@ -241,13 +241,26 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       select.append(opt);
     }
   }
-  fillSelect(form.elements.provider, [...new Set(cells.map((c) => c.provider))].sort(), state.provider, 'All providers');
-  fillSelect(form.elements.model, [...new Set(cells.map((c) => c.model))].sort(), state.model, 'All models');
+  const modelsForProvider = (provider) => provider
+    ? [...new Set(cells.filter((c) => c.provider === provider).map((c) => c.model))].sort()
+    : [...new Set(cells.map((c) => c.model))].sort();
+  const fillModel = (selected) => {
+    const sel = form.elements.model;
+    sel.textContent = '';
+    fillSelect(sel, modelsForProvider(state.provider), selected, 'All models');
+  };
 
-  form.addEventListener('change', (e) => {
-    const t = e.target;
-    if (t.name === 'provider') state.provider = t.value;
-    else if (t.name === 'model') state.model = t.value;
+  fillSelect(form.elements.provider, [...new Set(cells.map((c) => c.provider))].sort(), state.provider, 'All providers');
+  fillModel(state.model);
+
+  form.elements.provider.addEventListener('change', () => {
+    state.provider = form.elements.provider.value;
+    state.model = '';
+    fillModel('');
+    render();
+  });
+  form.elements.model.addEventListener('change', () => {
+    state.model = form.elements.model.value;
     render();
   });
   form.addEventListener('submit', (e) => { e.preventDefault(); render(); });
