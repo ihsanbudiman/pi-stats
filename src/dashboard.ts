@@ -547,7 +547,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       meter.append(fill);
       meterCell.append(meter);
       const subCell = el('td', 'num sub', plain.format(row.t.eventCount) + (row.t.eventCount === 1 ? ' response' : ' responses') + (row.t.cacheReadTokens + row.t.cacheWriteTokens > 0 ? ' · ' + rowCachePct + '% cached' : ''));
-      subTr.append(meterCell, subCell, el('td'), el('td'), el('td'));
+      subCell.colSpan = 4;
+      subTr.append(meterCell, subCell);
       tbody.append(subTr);
     }
     table.append(thead, tbody);
