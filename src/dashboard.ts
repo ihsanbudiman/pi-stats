@@ -102,10 +102,10 @@ h1{font-size:22px;font-weight:650;letter-spacing:-.02em;margin:0 0 4px}
 #chart text.tick{fill:var(--muted);font-size:11px;font-family:inherit;font-variant-numeric:tabular-nums}
 #chart line.grid{stroke:var(--grid);stroke-width:1}
 #chart line.baseline{stroke:var(--baseline);stroke-width:1}
-#chart path.bar-output{fill:#1e6bb8}
-#chart path.bar-output.hot{fill:#2878c8}
-#chart path.bar-input{fill:var(--accent)}
-#chart path.bar-input.hot{fill:var(--accent-hot)}
+#chart .bar-output{fill:#1e6bb8}
+#chart .bar-output.hot{fill:#2878c8}
+#chart .bar-input{fill:var(--accent)}
+#chart .bar-input.hot{fill:var(--accent-hot)}
 #chart rect.hit{outline:none}
 #chart rect.hit:focus-visible{stroke:var(--accent);stroke-width:2;fill:rgba(57,135,229,.08)}
 table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
