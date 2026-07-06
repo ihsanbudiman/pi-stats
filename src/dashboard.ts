@@ -151,8 +151,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
         </div>
       </div>
     </div>
-    <label class="field">Provider<select name="provider"></select></label>
-    <label class="field">Model<select name="model"></select></label>
+    <label class="field">Provider<select name="provider" multiple size="5"></select></label>
+    <label class="field">Model<select name="model" multiple size="5"></select></label>
   </form>
 
   <section class="tiles" id="tiles" aria-label="Summary"></section>
@@ -211,8 +211,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
     state.from = urlParams.get('from') || state.from;
     state.to = urlParams.get('to') || state.to;
   }
-  state.provider = urlParams.get('provider') || '';
-  state.model = urlParams.get('model') || '';
+  state.provider = urlParams.getAll('provider');
+  state.model = urlParams.getAll('model');
 
   // ---- dom helpers; provider/model names are untrusted, so always textContent
   function el(tag, className, text) {
@@ -237,12 +237,12 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
     for (const value of values) {
       const opt = el('option', null, value);
       opt.value = value;
-      if (value === current) opt.selected = true;
+      if (current.includes(value)) opt.selected = true;
       select.append(opt);
     }
   }
-  const modelsForProvider = (provider) => provider
-    ? [...new Set(cells.filter((c) => c.provider === provider).map((c) => c.model))].sort()
+  const modelsForProvider = (providers) => providers.length
+    ? [...new Set(cells.filter((c) => providers.includes(c.provider)).map((c) => c.model))].sort()
     : [...new Set(cells.map((c) => c.model))].sort();
   const fillModel = (selected) => {
     const sel = form.elements.model;
@@ -254,13 +254,15 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
   fillModel(state.model);
 
   form.elements.provider.addEventListener('change', () => {
-    state.provider = form.elements.provider.value;
-    state.model = '';
-    fillModel('');
+    const sel = form.elements.provider;
+    state.provider = [...sel.selectedOptions].map((o) => o.value).filter((v) => v !== '');
+    state.model = [];
+    fillModel([]);
     render();
   });
   form.elements.model.addEventListener('change', () => {
-    state.model = form.elements.model.value;
+    const sel = form.elements.model;
+    state.model = [...sel.selectedOptions].map((o) => o.value).filter((v) => v !== '');
     render();
   });
   form.addEventListener('submit', (e) => { e.preventDefault(); render(); });
@@ -391,8 +393,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
   function aggregate() {
     const match = cells.filter((c) =>
       c.usageDate >= state.from && c.usageDate <= state.to &&
-      (!state.provider || c.provider === state.provider) &&
-      (!state.model || c.model === state.model));
+      (!state.provider.length || state.provider.includes(c.provider)) &&
+      (!state.model.length || state.model.includes(c.model)));
     const groupBy = (key) => {
       const map = new Map();
       for (const c of match) {
@@ -527,7 +529,9 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       const tr = el('tr');
       const nameCell = el('td');
       nameCell.append(el('div', 'name', row.name));
-      nameCell.append(el('div', 'sub', plain.format(row.t.eventCount) + (row.t.eventCount === 1 ? ' response' : ' responses')));
+      const rowInputTotal = row.t.inputTokens + row.t.cacheReadTokens + row.t.cacheWriteTokens;
+      const rowCachePct = rowInputTotal > 0 ? Math.round((row.t.cacheReadTokens + row.t.cacheWriteTokens) / rowInputTotal * 100) : 0;
+      nameCell.append(el('div', 'sub', plain.format(row.t.eventCount) + (row.t.eventCount === 1 ? ' response' : ' responses') + (row.t.cacheReadTokens + row.t.cacheWriteTokens > 0 ? ' · ' + rowCachePct + '% cached' : '')));
       const meter = el('div', 'meter');
       const fill = el('span', 'meter-fill');
       fill.style.width = Math.max(2, Math.round((row.t.totalTokens / maxTokens) * 100)) + '%';
@@ -536,7 +540,7 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       tr.append(
         nameCell,
         el('td', 'num', fmtTokens(row.t.totalTokens)),
-        el('td', 'num', fmtTokens(row.t.inputTokens)),
+        el('td', 'num', fmtTokens(rowInputTotal)),
         el('td', 'num', fmtTokens(row.t.outputTokens)),
         el('td', 'num', fmtCost(costOf(row.t))),
       );
@@ -554,8 +558,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
 
   function describeRange(days, summary) {
     const scope = [];
-    if (state.provider) scope.push(state.provider);
-    if (state.model) scope.push(state.model);
+    if (state.provider.length) scope.push(state.provider.join(', '));
+    if (state.model.length) scope.push(state.model.join(', '));
     const span = days.length + (days.length === 1 ? ' day' : ' days') + ' · ' + state.from + ' to ' + state.to;
     const lead = summary.eventCount === 0 ? 'No usage recorded' : plain.format(summary.eventCount) + (summary.eventCount === 1 ? ' response' : ' responses');
     return lead + ' · ' + span + (scope.length ? ' · ' + scope.join(' · ') : '');
@@ -569,11 +573,12 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
     qs('#range-note').textContent = describeRange(days, agg.summary);
     const tiles = qs('#tiles');
     tiles.textContent = '';
+    const inputTotal = agg.summary.inputTokens + agg.summary.cacheReadTokens + agg.summary.cacheWriteTokens;
     tiles.append(
       tile('Total tokens', fmtTokens(agg.summary.totalTokens), plain.format(agg.summary.eventCount) + (agg.summary.eventCount === 1 ? ' response' : ' responses')),
-      tile('Input tokens', fmtTokens(agg.summary.inputTokens), 'prompt and context'),
+      tile('Input tokens', fmtTokens(inputTotal),
+        inputTotal > 0 ? Math.round((agg.summary.cacheReadTokens + agg.summary.cacheWriteTokens) / inputTotal * 100) + '% cached' : 'no input'),
       tile('Output tokens', fmtTokens(agg.summary.outputTokens), 'assistant responses'),
-      tile('Cache tokens', fmtTokens(agg.summary.cacheReadTokens + agg.summary.cacheWriteTokens), fmtTokens(agg.summary.cacheReadTokens) + ' read · ' + fmtTokens(agg.summary.cacheWriteTokens) + ' write'),
       tile('Estimated cost', fmtCost(costOf(agg.summary)), agg.summary.unknownCostEvents > 0 ? plain.format(agg.summary.unknownCostEvents) + ' events without pricing' : 'all events priced'),
     );
     qs('#chart-total').textContent = fmtTokens(agg.summary.totalTokens) + ' tokens in range';
@@ -585,8 +590,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       const params = new URLSearchParams();
       params.set('range', state.preset);
       if (state.preset === 'custom') { params.set('from', state.from); params.set('to', state.to); }
-      if (state.provider) params.set('provider', state.provider);
-      if (state.model) params.set('model', state.model);
+      for (const p of state.provider) params.append('provider', p);
+      for (const m of state.model) params.append('model', m);
       history.replaceState(null, '', location.pathname + '?' + params);
     } catch (err) { /* file: export — no history access needed */ }
   }
