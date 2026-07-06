@@ -151,8 +151,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
         </div>
       </div>
     </div>
-    <label class="field">Provider<select name="provider" multiple size="5"></select></label>
-    <label class="field">Model<select name="model" multiple size="5"></select></label>
+    <label class="field">Provider<select name="provider"></select></label>
+    <label class="field">Model<select name="model"></select></label>
   </form>
 
   <section class="tiles" id="tiles" aria-label="Summary"></section>
@@ -211,8 +211,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
     state.from = urlParams.get('from') || state.from;
     state.to = urlParams.get('to') || state.to;
   }
-  state.provider = urlParams.getAll('provider');
-  state.model = urlParams.getAll('model');
+  state.provider = urlParams.get('provider') || '';
+  state.model = urlParams.get('model') || '';
 
   // ---- dom helpers; provider/model names are untrusted, so always textContent
   function el(tag, className, text) {
@@ -237,12 +237,12 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
     for (const value of values) {
       const opt = el('option', null, value);
       opt.value = value;
-      if (current.includes(value)) opt.selected = true;
+      if (value === current) opt.selected = true;
       select.append(opt);
     }
   }
-  const modelsForProvider = (providers) => providers.length
-    ? [...new Set(cells.filter((c) => providers.includes(c.provider)).map((c) => c.model))].sort()
+  const modelsForProvider = (provider) => provider
+    ? [...new Set(cells.filter((c) => c.provider === provider).map((c) => c.model))].sort()
     : [...new Set(cells.map((c) => c.model))].sort();
   const fillModel = (selected) => {
     const sel = form.elements.model;
@@ -254,15 +254,13 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
   fillModel(state.model);
 
   form.elements.provider.addEventListener('change', () => {
-    const sel = form.elements.provider;
-    state.provider = [...sel.selectedOptions].map((o) => o.value).filter((v) => v !== '');
-    state.model = [];
-    fillModel([]);
+    state.provider = form.elements.provider.value;
+    state.model = '';
+    fillModel('');
     render();
   });
   form.elements.model.addEventListener('change', () => {
-    const sel = form.elements.model;
-    state.model = [...sel.selectedOptions].map((o) => o.value).filter((v) => v !== '');
+    state.model = form.elements.model.value;
     render();
   });
   form.addEventListener('submit', (e) => { e.preventDefault(); render(); });
@@ -393,8 +391,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
   function aggregate() {
     const match = cells.filter((c) =>
       c.usageDate >= state.from && c.usageDate <= state.to &&
-      (!state.provider.length || state.provider.includes(c.provider)) &&
-      (!state.model.length || state.model.includes(c.model)));
+      (!state.provider || c.provider === state.provider) &&
+      (!state.model || c.model === state.model));
     const groupBy = (key) => {
       const map = new Map();
       for (const c of match) {
@@ -558,8 +556,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
 
   function describeRange(days, summary) {
     const scope = [];
-    if (state.provider.length) scope.push(state.provider.join(', '));
-    if (state.model.length) scope.push(state.model.join(', '));
+    if (state.provider) scope.push(state.provider);
+    if (state.model) scope.push(state.model);
     const span = days.length + (days.length === 1 ? ' day' : ' days') + ' · ' + state.from + ' to ' + state.to;
     const lead = summary.eventCount === 0 ? 'No usage recorded' : plain.format(summary.eventCount) + (summary.eventCount === 1 ? ' response' : ' responses');
     return lead + ' · ' + span + (scope.length ? ' · ' + scope.join(' · ') : '');
@@ -590,8 +588,8 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       const params = new URLSearchParams();
       params.set('range', state.preset);
       if (state.preset === 'custom') { params.set('from', state.from); params.set('to', state.to); }
-      for (const p of state.provider) params.append('provider', p);
-      for (const m of state.model) params.append('model', m);
+      if (state.provider) params.set('provider', state.provider);
+      if (state.model) params.set('model', state.model);
       history.replaceState(null, '', location.pathname + '?' + params);
     } catch (err) { /* file: export — no history access needed */ }
   }
