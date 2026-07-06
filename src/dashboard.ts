@@ -102,8 +102,10 @@ h1{font-size:22px;font-weight:650;letter-spacing:-.02em;margin:0 0 4px}
 #chart text.tick{fill:var(--muted);font-size:11px;font-family:inherit;font-variant-numeric:tabular-nums}
 #chart line.grid{stroke:var(--grid);stroke-width:1}
 #chart line.baseline{stroke:var(--baseline);stroke-width:1}
-#chart path.bar{fill:var(--accent)}
-#chart path.bar.hot{fill:var(--accent-hot)}
+#chart path.bar-output{fill:#1e6bb8}
+#chart path.bar-output.hot{fill:#2878c8}
+#chart path.bar-input{fill:var(--accent)}
+#chart path.bar-input.hot{fill:var(--accent-hot)}
 #chart rect.hit{outline:none}
 #chart rect.hit:focus-visible{stroke:var(--accent);stroke-width:2;fill:rgba(57,135,229,.08)}
 table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
@@ -457,21 +459,37 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
 
     days.forEach((day, i) => {
       const totals = byDay.get(day);
-      const value = totals ? totals.totalTokens : 0;
+      const totalVal = totals ? totals.totalTokens : 0;
+      const outputVal = totals ? totals.outputTokens : 0;
+      const inputVal = totalVal - outputVal; // input + cached
       const xCenter = padLeft + band * i + band / 2;
-      if (value > 0) {
-        const h = Math.max(1.5, (value / top) * innerH);
-        const r = Math.min(4, barW / 2, h);
-        const x = xCenter - barW / 2;
-        const yTop = y(0) - h;
+      const x = xCenter - barW / 2;
+      const bottomY = y(0);
+      if (outputVal > 0) {
+        const hOut = Math.max(1.5, (outputVal / top) * innerH);
+        const rOut = Math.min(4, barW / 2, hOut);
         svg.append(svgEl('path', {
-          class: 'bar',
+          class: 'bar-output',
           'data-day': day,
-          d: 'M' + x + ' ' + y(0) + ' V' + (yTop + r) +
-            ' Q' + x + ' ' + yTop + ' ' + (x + r) + ' ' + yTop +
-            ' H' + (x + barW - r) +
-            ' Q' + (x + barW) + ' ' + yTop + ' ' + (x + barW) + ' ' + (yTop + r) +
-            ' V' + y(0) + ' Z',
+          d: 'M' + x + ' ' + bottomY + ' V' + (bottomY - hOut + rOut) +
+            ' Q' + x + ' ' + (bottomY - hOut) + ' ' + (x + rOut) + ' ' + (bottomY - hOut) +
+            ' H' + (x + barW - rOut) +
+            ' Q' + (x + barW) + ' ' + (bottomY - hOut) + ' ' + (x + barW) + ' ' + (bottomY - hOut + rOut) +
+            ' V' + bottomY + ' Z',
+        }));
+      }
+      if (inputVal > 0) {
+        const hIn = Math.max(1.5, (inputVal / top) * innerH);
+        const topOfInput = bottomY - (outputVal / top) * innerH;
+        const rIn = Math.min(4, barW / 2, hIn);
+        svg.append(svgEl('path', {
+          class: 'bar-input',
+          'data-day': day,
+          d: 'M' + x + ' ' + topOfInput + ' V' + (topOfInput - hIn + rIn) +
+            ' Q' + x + ' ' + (topOfInput - hIn) + ' ' + (x + rIn) + ' ' + (topOfInput - hIn) +
+            ' H' + (x + barW - rIn) +
+            ' Q' + (x + barW) + ' ' + (topOfInput - hIn) + ' ' + (x + barW) + ' ' + (topOfInput - hIn + rIn) +
+            ' V' + topOfInput + ' Z',
         }));
       }
       const lastLabelAt = Math.floor((days.length - 1) / labelEvery) * labelEvery;
@@ -482,16 +500,16 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       }
 
       const hit = svgEl('rect', { x: padLeft + band * i, y: padTop, width: band, height: innerH, fill: 'transparent', class: 'hit', tabindex: '0' });
-      hit.setAttribute('aria-label', shortDay(day) + ': ' + plain.format(value) + ' tokens');
+      hit.setAttribute('aria-label', shortDay(day) + ': ' + plain.format(totalVal) + ' tokens');
       const rows = () => [
-        { value: fmtTokens(value), label: 'total tokens', strong: true },
+        { value: fmtTokens(totalVal), label: 'total tokens', strong: true },
         { value: fmtTokens(totals ? totals.inputTokens : 0), label: 'input' },
+        { value: fmtTokens(totals ? (totals.cacheReadTokens + totals.cacheWriteTokens) : 0), label: 'cached' },
         { value: fmtTokens(totals ? totals.outputTokens : 0), label: 'output' },
         { value: fmtCost(totals ? costOf(totals) : null), label: 'est. cost' },
       ];
       const hover = (on) => {
-        const bar = svg.querySelector('.bar[data-day="' + day + '"]');
-        if (bar) bar.classList.toggle('hot', on);
+        svg.querySelectorAll('[data-day="' + day + '"]').forEach((bar) => bar.classList.toggle('hot', on));
       };
       hit.addEventListener('pointerenter', () => hover(true));
       hit.addEventListener('pointermove', (e) => showTooltip(shortDay(day), rows(), e.clientX, e.clientY));
