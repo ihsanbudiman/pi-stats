@@ -467,16 +467,26 @@ table.breakdown{width:100%;border-collapse:collapse;font-size:13px;table-layout:
       const bottomY = y(0);
       if (outputVal > 0) {
         const hOut = Math.max(1.5, (outputVal / top) * innerH);
-        const rOut = Math.min(4, barW / 2, hOut);
-        svg.append(svgEl('path', {
-          class: 'bar-output',
-          'data-day': day,
-          d: 'M' + x + ' ' + bottomY + ' V' + (bottomY - hOut + rOut) +
-            ' Q' + x + ' ' + (bottomY - hOut) + ' ' + (x + rOut) + ' ' + (bottomY - hOut) +
-            ' H' + (x + barW - rOut) +
-            ' Q' + (x + barW) + ' ' + (bottomY - hOut) + ' ' + (x + barW) + ' ' + (bottomY - hOut + rOut) +
-            ' V' + bottomY + ' Z',
-        }));
+        const topOut = bottomY - hOut;
+        // ponytail: bottom bar is rectangular when input bar stacks on top
+        if (inputVal > 0) {
+          svg.append(svgEl('rect', {
+            class: 'bar-output',
+            'data-day': day,
+            x: x, y: topOut, width: barW, height: hOut,
+          }));
+        } else {
+          const rOut = Math.min(4, barW / 2, hOut);
+          svg.append(svgEl('path', {
+            class: 'bar-output',
+            'data-day': day,
+            d: 'M' + x + ' ' + bottomY + ' V' + (topOut + rOut) +
+              ' Q' + x + ' ' + topOut + ' ' + (x + rOut) + ' ' + topOut +
+              ' H' + (x + barW - rOut) +
+              ' Q' + (x + barW) + ' ' + topOut + ' ' + (x + barW) + ' ' + (topOut + rOut) +
+              ' V' + bottomY + ' Z',
+          }));
+        }
       }
       if (inputVal > 0) {
         const hIn = Math.max(1.5, (inputVal / top) * innerH);
