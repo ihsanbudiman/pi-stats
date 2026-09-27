@@ -10,6 +10,7 @@ function formatTokens(value: number): string {
   return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
+// test
 function formatCost(value: number | null): string {
   if (value === null) return "—";
   return `$${value.toFixed(value >= 1 ? 2 : 4)}`;
